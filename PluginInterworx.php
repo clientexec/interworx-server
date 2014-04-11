@@ -14,7 +14,12 @@ require_once 'plugins/server/interworx/InterworxApi.php';
  */
 class PluginInterworx extends ServerPlugin
 {
-    public $usesPackageName = true;
+    public $features = array(
+        'packageName' => true,
+        'testConnection' => false,
+        'showNameservers' => true
+    );
+
     /**
      * Process vars that is used on some method.
      * This method exists only to prevent duplicated code.
