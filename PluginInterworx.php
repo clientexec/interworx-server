@@ -183,25 +183,25 @@ class PluginInterworx extends ServerPlugin
          * - encryptable    used to indicate the variable's value must be encrypted in the database
          */
         $variables = array(
-            /*T*/'Name'/*/T*/ => array(
+            lang('Name') => array(
                 'type'        => 'hidden',
-                'description' => /*T*/'Used by ClientExec to display plugin. It must match the action function name(s).'/*/T*/,
+                'description' => lang('Used by ClientExec to display plugin. It must match the action function name(s).'),
                 'value'       => 'InterWorx-CP'
             ),
-            /*T*/'Description'/*/T*/ => array (
+            lang('Description') => array (
                 'type'        => 'hidden',
-                'description' => /*T*/'Description viewable by admin in server settings'/*/T*/,
-                'value'       => /*T*/'InterWorx-CP integration.'/*/T*/
+                'description' => lang('Description viewable by admin in server settings'),
+                'value'       => lang('InterWorx-CP integration.')
             ),
-            /*T*/'Access Key'/*/T*/ => array (
+            lang('Access Key') => array (
                 'type'        => 'textarea',
-                'description' => /*T*/'Access key used to authenticate to server.'/*/T*/,
+                'description' => lang('Access key used to authenticate to server.'),
                 'value'       => '',
                 'encryptable' => true
             ),
-            /*T*/'Actions'/*/T*/ => array (
+            lang('Actions') => array (
                 'type'        => 'hidden',
-                'description' => /*T*/'Actions currently available for this plugin.'/*/T*/,
+                'description' => lang('Actions currently available for this plugin.'),
                 'value'       => 'Create,Delete,Suspend,UnSuspend'
             )
         );
