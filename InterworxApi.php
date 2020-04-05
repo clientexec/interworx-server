@@ -19,7 +19,7 @@ class InterworxApi
      */
     protected $_key;
 
-    function __construct ($ip, $key)
+    function __construct($ip, $key)
     {
         $this->setKey($key);
         $this->_connect($ip);
@@ -32,9 +32,20 @@ class InterworxApi
      *
      * @return void
      */
-    protected function _connect ($ip)
+    protected function _connect($ip)
     {
-        $this->_client = new SoapClient("https://{$ip}:2443/soap?wsdl");
+        $caPathOrFile = \Composer\CaBundle\CaBundle::getSystemCaRootBundlePath();
+        if (is_dir($caPathOrFile)) {
+            $opts['ssl']['capath'] = $caPathOrFile;
+        } else {
+            $opts['ssl']['cafile'] = $caPathOrFile;
+        }
+
+        $options = [
+            'stream_context' => stream_context_create($opts)
+        ];
+
+        $this->_client = new SoapClient("https://{$ip}:2443/soap?wsdl", $options);
     }
 
     /**
@@ -44,7 +55,7 @@ class InterworxApi
      *
      * @return mixed
      */
-    public function addSiteworxAccount ($data)
+    public function addSiteworxAccount($data)
     {
         if (array_key_exists('packagetemplate', $data) and !$this->packageExists($data['packagetemplate'])) {
             $error = "The result is empty.";
@@ -65,7 +76,7 @@ class InterworxApi
      *
      * @return mixed
      */
-    public function call ($controller, $action, $input = null)
+    public function call($controller, $action, $input = null)
     {
         $result = $this->_client->route($this->_key, $controller, $action, $input);
 
@@ -108,7 +119,7 @@ class InterworxApi
      *
      * @return mixed
      */
-    public function deleteSiteworxAccount ($domain)
+    public function deleteSiteworxAccount($domain)
     {
         $data = array('domain' => $domain);
         $result = $this->call('/nodeworx/siteworx', 'delete', $data);
@@ -122,7 +133,7 @@ class InterworxApi
      *
      * @return mixed
      */
-    public function editSiteworxAccount ($data)
+    public function editSiteworxAccount($data)
     {
         if (array_key_exists('packagetemplate', $data) and !$this->packageExists($data['packagetemplate'])) {
             $error = "The result is empty.";
@@ -141,7 +152,7 @@ class InterworxApi
      *
      * @return mixed
      */
-    public function getSiteworxAccount ($domain)
+    public function getSiteworxAccount($domain)
     {
         $data = array('domain' => $domain);
         $result = $this->call('/nodeworx/siteworx', 'querySiteworxAccountDetails', $data);
@@ -153,7 +164,7 @@ class InterworxApi
      *
      * @return array
      */
-    public function listPackages ()
+    public function listPackages()
     {
         $packages = $this->call('/nodeworx/packages', 'listDetails');
 
@@ -167,7 +178,7 @@ class InterworxApi
      *
      * @return bool
      */
-    public function packageExists ($name)
+    public function packageExists($name)
     {
         $packages = $this->listPackages();
         $packageExists = false;
@@ -186,7 +197,7 @@ class InterworxApi
      *
      * @param string $key Access key of the server. It can also be an active session ID.
      */
-    public function setKey ($key)
+    public function setKey($key)
     {
         $this->_key = $key;
     }
@@ -198,7 +209,7 @@ class InterworxApi
      *
      * @return mixed
      */
-    public function suspendSiteworxAccount ($domain)
+    public function suspendSiteworxAccount($domain)
     {
         $data = array('domain' => $domain);
         $result = $this->call('/nodeworx/siteworx', 'suspend', $data);
@@ -212,7 +223,7 @@ class InterworxApi
      *
      * @return mixed
      */
-    public function unsuspendSiteworxAccount ($domain)
+    public function unsuspendSiteworxAccount($domain)
     {
         $data = array('domain' => $domain);
         $result = $this->call('/nodeworx/siteworx', 'unsuspend', $data);
