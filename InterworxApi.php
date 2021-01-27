@@ -42,7 +42,7 @@ class InterworxApi
         }
 
         $options = [
-            'stream_context' => stream_context_create($opts)
+        'stream_context' => stream_context_create($opts)
         ];
 
         $this->_client = new SoapClient("https://{$ip}:2443/soap?wsdl", $options);
@@ -57,13 +57,21 @@ class InterworxApi
      */
     public function addSiteworxAccount($data)
     {
-        if (array_key_exists('packagetemplate', $data) and !$this->packageExists($data['packagetemplate'])) {
-            $error = "The result is empty.";
-            CE_Lib::log(4, "InterworxApi::addSiteworxAccount::error: ({$status}) {$error}");
-            throw new Exception($error);
-        }
-
         $result = $this->call('/nodeworx/siteworx', 'add', $data);
+        return $result;
+    }
+
+
+    /**
+     * Add a new reseller account
+     *
+     * @param array $data Input data
+     *
+     * @return mixed
+     */
+    public function addResellerAccount($data)
+    {
+        $result = $this->call('/nodeworx/reseller', 'add', $data);
         return $result;
     }
 
@@ -83,7 +91,7 @@ class InterworxApi
         if (!is_array($result) or (is_array($result) and (!array_key_exists('status', $result) or !array_key_exists('payload', $result)))) {
             $error = 'Unexpected response from Interworx Server.';
             CE_Lib::log(4, "InterworxApi::call::error: ({$status}) Result:\n" . print_r($result, true));
-            throw new Exception($error);
+            throw new CE_Exception($error);
         }
 
         $status = $result['status'];
@@ -92,24 +100,40 @@ class InterworxApi
         if ($status == 401) {
             $error = 'Failed to authenticate.';
             CE_Lib::log(4, "InterworxApi::call::error: {$error}");
-            throw new Exception($error);
+            throw new CE_Exception($error);
         } elseif ($status != 0) {
             if (is_array($payload)) {
                 $error = 'Failed to call the Interworx API.';
                 CE_Lib::log(4, "InterworxApi::call::error: ({$status}) Result:\n" . print_r($payload, true));
-                throw new Exception($error);
+                throw new CE_Exception($error);
             } elseif (empty($payload)) {
                 $error = "The result is empty.";
                 CE_Lib::log(4, "InterworxApi::call::error: ({$status}) {$error}");
-                throw new Exception($error);
+                throw new CE_Exception($error);
             } else {
                 $error = $payload;
                 CE_Lib::log(4, "InterworxApi::call::error: ({$status}) {$error}");
-                throw new Exception($error);
+                throw new CE_Exception($error);
             }
         }
 
         return $payload;
+    }
+
+    /**
+     * Delete a reseller account
+     *
+     * @param string $resellerId Reseller ID
+     *
+     * @return mixed
+     */
+    public function deleteResellerAccount($resellerId)
+    {
+        $data = [
+            'reseller_id' => $resellerId
+        ];
+        $result = $this->call('/nodeworx/reseller', 'delete', $data);
+        return $result;
     }
 
     /**
@@ -135,12 +159,6 @@ class InterworxApi
      */
     public function editSiteworxAccount($data)
     {
-        if (array_key_exists('packagetemplate', $data) and !$this->packageExists($data['packagetemplate'])) {
-            $error = "The result is empty.";
-            CE_Lib::log(4, "InterworxApi::addSiteworxAccount::error: ({$status}) {$error}");
-            throw new Exception($error);
-        }
-
         $result = $this->call('/nodeworx/siteworx', 'edit', $data);
         return $result;
     }
@@ -217,6 +235,23 @@ class InterworxApi
     }
 
     /**
+     * Suspend a reseler account
+     *
+     * @param string $resellerId Domain name
+     *
+     * @return mixed
+     */
+    public function suspendResellerAccount($resellerId)
+    {
+        $data = [
+            'reseller_id' => $resellerId,
+            'status' => 'inactive'
+        ];
+        $result = $this->call('/nodeworx/reseller', 'edit', $data);
+        return $result;
+    }
+
+    /**
      * Unsuspend a siteworx account
      *
      * @param string $domain Domain name
@@ -228,5 +263,65 @@ class InterworxApi
         $data = array('domain' => $domain);
         $result = $this->call('/nodeworx/siteworx', 'unsuspend', $data);
         return $result;
+    }
+
+    /**
+     * Unsuspend a reseller account
+     *
+     * @param string $resellerId Domain name
+     *
+     * @return mixed
+     */
+    public function unsuspendResellerAccount($resellerId)
+    {
+        $data = [
+            'reseller_id' => $resellerId,
+            'status' => 'active'
+        ];
+        $result = $this->call('/nodeworx/reseller', 'edit', $data);
+        return $result;
+    }
+
+
+    /**
+     * Get the Reseller ID
+     *
+     * @param string $email Reseller's Email Address
+     *
+     * @return mixed
+     */
+    public function getResellerId($email)
+    {
+        $result = $this->call('/nodeworx/reseller', 'listIds', []);
+        foreach ($result as $reseller) {
+            list($resellerID, $resellerEmail) = $reseller;
+            $resellerEmail = explode("(", $resellerEmail, 2);
+            $resellerEmail = $resellerEmail[1];
+            $resellerEmail = substr($resellerEmail, 0, -1);
+            if ($resellerEmail == $email) {
+                return $resellerID;
+            }
+        }
+    }
+
+    public function queryResellerDetails($email)
+    {
+        $data = [
+        //'reseller' => $email
+        ];
+        // Due to a bug with intewrox, we need to call list, instead of queryResellerDetails.
+        $result = $this->call('/nodeworx/reseller', 'listResellers', $data);
+        foreach ($result as $account) {
+            if ($account->email == $email) {
+                return $account;
+            }
+        }
+        throw new Exception('Reseller does not exist');
+    }
+
+    public function getFreeIP()
+    {
+        $result = $this->call('/nodeworx/siteworx', 'listFreeIps', []);
+        return $result[0][0];
     }
 }
